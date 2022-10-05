@@ -20,9 +20,8 @@ from datetime import datetime
 import click
 import yaml
 
-
-def warning(txt):
-    click.secho(txt, fg='red')
+from log import warning
+from step1 import do_step1
 
 
 def load_configuration():
@@ -67,6 +66,8 @@ def do_model():
         return
 
     make_output_directory(cfg)
+
+    do_step1(cfg)
 
 
 if __name__ == '__main__':

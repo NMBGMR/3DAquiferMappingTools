@@ -27,13 +27,14 @@ except ImportError:
     warning('You are not using a version of python with arcpy installed')
     sys.exit(1)
 
-def topo_to_raster(cfg, shapefile, i, elev_ID, unit):
-    info('topo_to_raster', shapefile, i, elev_ID, unit)
+
+def topo_to_raster(cfg, shapefile, i, elev_id, unit):
+    info('topo_to_raster', shapefile, i, elev_id, unit)
     # ps_units = ['udockum_base_pecos', 'ldockum_base_pecos', 'uochoan_base_pecos', 'lochoan_base_pecos']
     # db_units = ['udockum_base', 'ldockum_base', 'uochoan_base', 'lochoan_base']
 
     # Set local variables
-    in_point_elevations = TopoPointElevation([[shapefile, '{}'.format(elev_ID)]])
+    in_point_elevations = TopoPointElevation([[shapefile, str(elev_id)]])
 
     in_cliff = TopoCliff(['cbp_f', 'gm_f'])
 
@@ -43,13 +44,12 @@ def topo_to_raster(cfg, shapefile, i, elev_ID, unit):
     CheckOutExtension("Spatial")
 
     # Execute TopoToRaster
-    # arcpy.env.extent = r'E:\BASEMAP\dbasin_spadtm_resamp_ft.tif'
     outTTR = TopoToRaster(in_features, "1000", Extent(485690, 3530089, 693190, 3627589), "20", "#", "#", "ENFORCE",
                           "SPOT",
-                          "20", "#", "1", "0", "0", "200", '#', '#', 'ERROR_FILE{}.txt'.format(unit), '#', '#', '#',
-                          'ERROR_PTS_{}'.format(unit))
+                          "20", "#", "1", "0", "0", "200", '#', '#', f'ERROR_FILE{unit}.txt', '#', '#', '#',
+                          f'ERROR_PTS_{unit}')
 
-    name = 't2r{}{}.tif'.format(unit, i)
+    name = f't2r{unit}{i}.tif'
     p = os.path.join(cfg['output_directory'], name)
     outTTR.save(p)
     info(i, 't2r done')
@@ -99,7 +99,7 @@ def query_by_sigma(shapefile, i, unit):
     out_feature_class = f"{unit}_qc{i}_result"
     CopyFeatures_management(in_features, out_feature_class)
 
-    print(i, 'query done and shapefile output')
+    info(i, 'query done and shapefile output')
 
 
 def copy_master_to_working(unit):
@@ -125,7 +125,7 @@ def configure_arcpy(cfg):
 
 
 def do_step1(cfg):
-    configure_arcpy(cfg)
+    configure_arcpy(cfg['step1'])
 
     unitnames = ['alvbase',
                  'udockum_base',
@@ -154,13 +154,13 @@ def do_step1(cfg):
                     f'{unit}_qc3_result']
 
         for i, fc in enumerate(temp_fcs):
-            print(i, fc)
+            info(i, fc)
             out_ras = topo_to_raster(cfg, fc, i, elev_ID, unit)
 
             extract_vals_to_pts(fc, out_ras, i)
             calc_sigma(fc, i, elev_ID)
             query_by_sigma(fc, i, unit)
             if i == 4:
-                copy_final(cfg, out_ras, unit)
+                copy_final(cfg['step1'], out_ras, unit)
             info(f'{unit} QC process finished')
 # ============= EOF =============================================

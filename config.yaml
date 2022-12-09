@@ -1,0 +1,15 @@
+output_directory: 'W:\statewide\aqua_map3D\am_references\MarsMapMethods\tutorial\example_network_output'
+overwriteOutput: True
+basin: 'DelawareBasin'
+unitnames:
+  - alvb
+  - udb
+elevIDs:
+  - alv_b_elev
+  - ud_b_elev
+
+
+#step1:
+#  arcpy_workspace: E:\DelawareBasin\DelawareBasin_geodata\workingdata\dbasin_geodata_originals5_deccheck.gdb
+#  arcpy_snapRaster: E:\DelawareBasin\DelawareBasin_geodata\workingdata\BASEMAP.gdb\z_snapraster
+#  out_geodb: E:\DelawareBasin\DelawareBasin_geodata\workingdata\QCoutputs_v12.gdb

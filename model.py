@@ -38,48 +38,51 @@ v = '001'
 
 def init_arcpy(cfg):
     # arcpy.env.snapRaster = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\BASEMAP.gdb\z_snapraster'
-    path = os.path.join(get_workingdata(cfg), 'BASEMAP.gdb', 'z_snapraster')
+
+    path = os.path.join(cfg['workingdata'], 'BASEMAP.gdb', 'z_snapraster')
     arcpy.env.snapRaster = path
     arcpy.env.overwriteOutput = cfg.get('overwriteOutput', True)
     env.outputCoordinateSystem = arcpy.SpatialReference("NAD 1983 UTM Zone 13N")
     arcpy.CheckOutExtension('Spatial')
-    env.workspace = get_working_folder(cfg)
+    env.workspace = cfg['working_folder']
+
+#
+# def get_working_folder(cfg):
+#     # working_folder = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\working_folder_example'
+#     name = cfg.get('working_folder', 'working_folder_example')
+#     return os.path.join(get_working_geodb_and_folders_ex(cfg), name)
+#
+#
+# def get_workingdata(cfg):
+#     basin = cfg['basin']
+#     return os.path.join('E:', basin, f"{basin}_geodata", 'workingdata')
+#
+#
+# # basinname = 'Delaware Basin'
+# def get_working_geodb_and_folders_ex(cfg):
+#     return os.path.join(get_workingdata(cfg), 'working_geodb_and_folders_ex')
+#
+#
+# def get_working_geodb_path(cfg):
+#     name = cfg.get('working_geodb_name', 'working_geodb_name_example')
+#     if not name.endswith('.gdb'):
+#         name = f'{name}.gdb'
+#
+#     working_geodb_and_folders_ex = get_working_geodb_and_folders_ex(cfg)
+#     working_geodb = os.path.join(working_geodb_and_folders_ex, name)
+#     return working_geodb
 
 
-def get_working_folder(cfg):
-    # working_folder = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\working_folder_example'
-    name = cfg.get('working_folder', 'working_folder_example')
-    return os.path.join(get_working_geodb_and_folders_ex(cfg), name)
-
-
-def get_workingdata(cfg):
-    basin = cfg['basin']
-    return os.path.join('E:', basin, f"{basin}_geodata", 'workingdata')
-
-
-# basinname = 'Delaware Basin'
-def get_working_geodb_and_folders_ex(cfg):
-    return os.path.join(get_workingdata(cfg), 'working_geodb_and_folders_ex')
-
-
-def get_working_geodb_path(cfg):
-    name = cfg.get('working_geodb_name', 'working_geodb_name_example')
-    if not name.endswith('.gdb'):
-        name = f'{name}.gdb'
-
-    working_geodb_and_folders_ex = get_working_geodb_and_folders_ex(cfg)
-    working_geodb = os.path.join(working_geodb_and_folders_ex, name)
-    return working_geodb
-
-
-def set_workspace(cfg):
-    working_geodb = get_working_geodb_path(cfg)
-    env.workspace = working_geodb
+# def set_working_geodb_workspace(cfg):
+#     working_geodb = get_working_geodb_path(cfg)
+#     env.workspace = working_geodb
 
 
 def topo_to_raster(cfg, fc, i, elev_ID, unit):
     print(fc, i, elev_ID, unit)
-    set_workspace(cfg)
+    # set_working_geodb_workspace(cfg)
+    env.workspace = cfg['working_geodb']
+
 
     # Set local variables
     inPointElevations = TopoPointElevation([[fc, '{}'.format(elev_ID)]])
@@ -109,7 +112,8 @@ def topo_to_raster(cfg, fc, i, elev_ID, unit):
 
     name = f'b001002r{unit}{i}.tif'
 
-    stepwise_output_folder = os.path.join(get_working_geodb_and_folders_ex(cfg), 'b001')
+    # stepwise_output_folder = os.path.join(get_working_geodb_and_folders_ex(cfg), 'b001')
+    stepwise_output_folder = cfg['b001']
     path = os.path.join(stepwise_output_folder, name)
     outTTR.save(path)
     print(i, 't2r done')
@@ -131,8 +135,8 @@ def extract_vals_to_pts(cfg, fc, raster, i, unit):
     #    an output point feature class.  This example takes a multiband IMG
     #    and two GRID files as input.
     # Requirements: Spatial Analyst Extension
-    # env.workspace = working_geodb
-    set_workspace(cfg)
+    env.workspace = cfg['working_geodb']
+    # set_working_geodb_workspace(cfg)
     # Set local variables
     inPointFeatures = fc
     inRasterList = [[raster, f'ei{i}']]
@@ -165,12 +169,12 @@ def query_by_sigma(cfg, fc, i, unit):
 
     in_features = arcpy.MakeQueryTable_management(table, out_table, in_key_field_option, in_key_field, in_field,
                                                   where_clause)
-    working_folder = get_working_folder(cfg)
-    out_shapefile = os.path.join(working_folder,
+    # working_folder = get_working_folder(cfg)
+    out_shapefile = os.path.join(cfg['working_folder'],
                                  f'{process_tag}{unit}{i}.shp')
 
     # out_feature_class = r'{}\b001003{}{}'.format(working_geodb, unit, i)
-    out_feature_class = os.path.join(get_working_geodb_path(cfg), f'{process_tag}{unit}{i}')
+    out_feature_class = os.path.join(cfg['working_geodb'], f'{process_tag}{unit}{i}')
     arcpy.CopyFeatures_management(in_features, out_shapefile)
     arcpy.CopyFeatures_management(in_features, out_feature_class)
 
@@ -178,7 +182,8 @@ def query_by_sigma(cfg, fc, i, unit):
 
 
 def copy_master_to_working(cfg, unit):
-    in_workspace = get_working_geodb_path(cfg)
+    # in_workspace = get_working_geodb_path(cfg)
+    in_workspace = cfg['working_geodb']
     path = os.path.join(in_workspace, f'{unit}_data_all_orig')
     arcpy.FeatureClassToFeatureClass_conversion(path,
                                                 in_workspace,
@@ -192,18 +197,19 @@ def copy_master_to_working(cfg, unit):
 def copy_final(cfg, raster, unit):
     # name = r'{}\b001002r{}.tif'.format(working_folder, unit)
     name = f'b001002r{unit}.tif'
-    working_folder = get_working_folder(cfg)
-    name = os.path.join(working_folder, name)
+    # working_folder = get_working_folder(cfg)
+    name = os.path.join(cfg['working_folder'], name)
     arcpy.CopyRaster_management(raster, name, 'TIFF', '', '-3.402823e38',
                                 'NONE', 'NONE', '32_BIT_FLOAT', '', '')
 
     return name
 
 
-def ebm_modelbound(rasters, n, unitnames):
+def ebm_modelbound(cfg, rasters, n, unitnames):
     print('BEGIN masking rasters to model boundary')
     # USER INPUT - STUDY BOUNDARY RASTER
-    mask = r'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
+    #mask = r'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
+    mask = cfg['model_extent_polygon']
     print('Model boundary raster or polygon used for clipping = {}'.format(mask))
     inRasters = rasters
     outRasters = []
@@ -293,7 +299,7 @@ def mosaic_min(cfg, rasters, unitnames):
     name_alv_fe = f'b002002r{unitnames[1]}.tif'
     print('...mosaicking', rasters[0], 'with', rasters[1], 'MINIMUM', 'name', name_alv_fe)
 
-    working_folder = get_working_folder(cfg)
+    working_folder = cfg['working_folder']
     arcpy.MosaicToNewRaster_management(f'{rasters[0]};{rasters[1]}', working_folder,
                                        name_alv_fe, env.outputCoordinateSystem,
                                        '32_BIT_FLOAT', '1000', '1', 'MINIMUM', '')
@@ -337,7 +343,8 @@ def resample(surfaces, units, size='1000', kind='NEAREST'):
 
 
 def place_final002_surfaces(cfg, rasters):
-    f = get_working_geodb_and_folders_ex(cfg)
+    # f = get_working_geodb_and_folders_ex(cfg)
+    f = cfg['working_geodb_and_folders']
     outfolder002 = os.path.join(f, 'b002')
     outgdb002 = os.path.join(f, 'b002.gdb')
     # outfolder002 = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\b002'
@@ -361,7 +368,7 @@ def copy_to_network_folder(cfg, versionrasters):
     print('COPYING VERSIONS TO NETWORK VERSION FOLDER')
 
     # output_location = r'{}'.format(CONFIG_FIN_V['ROOT'])
-    output_location = cfg['output_directory']
+    output_location = cfg['network_output_directory']
     if not os.path.exists(output_location):
         os.makedirs(output_location)
 
@@ -377,7 +384,7 @@ def copy_to_network_folder(cfg, versionrasters):
 
 def make_network_gdb_name(cfg, name, create=True):
     basename = f'{name}.gdb'
-    output_directory = cfg['output_directory']
+    output_directory = cfg['network_output_directory']
     name = os.path.join(output_directory, basename)
     if create:
         # if does not exist create it
@@ -400,26 +407,36 @@ def export_fc_to_csv(fc, elevID, unit):
     return qc_csv
 
 
-def uncert_topo_to_raster(name, n):
+def uncert_topo_to_raster(cfg, name, n):
     # need to make n number of surfaces, where n = number of random sample text files generated in sample_percent
+    print('current workspace =', env.workspace)
+    #env.workspace = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\working_folder_example'
+    # output_directory = get_working_folder(cfg)
+    output_directory = cfg['working_folder']
 
     for i in range(1, n + 1):
         print(f'Running topo to raster on {name}, {i}')
         fc = f'{name}_fc00{i}.shp'
         inPointElevations = TopoPointElevation([[fc, 'ei4']])
+        print('inpointelevations', inPointElevations)
         inCliffs = TopoCliff(['cbp_f.shp', 'gm_f.shp'])
         inFeatures = ([inPointElevations, inCliffs])
-
+        print('infeatyre', inFeatures)
         outTTR = TopoToRaster(inFeatures, "1000", Extent(485690, 3530089, 693190, 3627589), "20", "#", "#", "ENFORCE",
                               "SPOT", "20", "#", "1", "0", "0", "200", '#', '#', '#', '#', '#', '#', '#')
 
-        outTTR.save(f'{name}_t2r{i}.tif')
+        path = os.path.join(output_directory, f'{name}_t2r{i}.tif')
+        outTTR.save(path)
+
         print('t2r', f'{name}, {i}')
     print('t2r done')
 
 
 def create_feature_class(cfg, name, n):
-    working_folder = get_working_folder(cfg)
+    working_folder = cfg['working_folder']
+    # working_folder = get_working_folder(cfg)
+    print('fc current workspace == ', env.workspace)
+    print('working folder', working_folder)
     for i in range(1, n + 1):
         print(f'Creating feature class out of rand sample files: {name}, {i}')
         table = f'{name}_rand00{i}.csv'
@@ -441,7 +458,10 @@ def sample_percent(cfg, df, unitname, n):
     # that dataset (500) times - store in 'output_random_sample_datasets'
     # out_path = r'C:\Users\mfichera\PycharmProjects\3D_mapping\db_methods\randsample_exports'
     # out_path = working_folder
-    out_path = get_working_folder(cfg)
+    # out_path = get_working_folder(cfg)
+    out_path = cfg['working_folder']
+    print('sample percent current workspace == ', env.workspace)
+    print('outoyasdf ', out_path)
     for i in range(1, n + 1):
         print(f'RANDOM SAMPLE {i}: taking random sample of {unitname} dataset')
         rand_samp = df.sample(frac=.75)
@@ -454,8 +474,10 @@ def sample_percent(cfg, df, unitname, n):
 
 
 def generate_uncertainty_maps(cfg, unitnames, n, masks):
-    set_workspace(cfg)
+    # set_workspace(cfg)
     # env.workspace = working_folder
+    # env.workspace = get_working_folder(cfg)
+    env.workspace = cfg['working_folder']
     umaps = []
     for unit, mask in zip(unitnames[1:], masks[1:]):
         print(f'generating uncertainty map for unit {unit}')
@@ -480,7 +502,8 @@ def generate_uncertainty_maps(cfg, unitnames, n, masks):
         print('...saving results to separate folder...')
 
         # uncertainty_path = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\b004'
-        uncertainty_path = os.path.join(get_working_geodb_and_folders_ex(cfg), 'b004')
+        # uncertainty_path = os.path.join(get_working_geodb_and_folders_ex(cfg), 'b004')
+        uncertainty_path = cfg['b004']
         if not os.path.exists(uncertainty_path):
             os.makedirs(uncertainty_path)
         outSTD_map.save(os.path.join(uncertainty_path, nameSTD))

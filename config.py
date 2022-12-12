@@ -33,14 +33,35 @@ def load_configuration():
 
 
 def validate_configuration(cfg):
-    for check in ('input_directory', 'output_directory',
-                  'basin', 'working_folder'):
+    for check in (
+             #'input_directory',
+             'working_geodb_name',
+              #    'output_directory',
+                  'basin',):
         if check in cfg:
             continue
         warning(f'{check} missing from configuration')
         return
 
     return True
+
+
+def setup_configuration(cfg):
+    basin = cfg['basin']
+    workingdata = os.path.join('E:', basin, f"{basin}_geodata", 'workingdata')
+    cfg['workingdata'] = workingdata
+
+    working_geodb_and_folders = os.path.join(workingdata, 'working_geodb_and_folders_ex')
+    cfg['working_geodb_and_folders'] = working_geodb_and_folders
+
+    working_folder = os.path.join(working_geodb_and_folders, cfg['working_folder'])
+    cfg['working_folder'] = working_folder
+
+    working_geodb = os.path.join(working_folder, cfg['working_geodb_name'])
+    cfg['working_geodb'] = working_geodb
+
+    cfg['b001'] = os.path.join(working_geodb_and_folders, 'b001')
+    cfg['b004'] = os.path.join(working_geodb_and_folders, 'b004')
 
 
 def report_configuration(cfg):

@@ -13,10 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-import contextlib
+from contextlib import contextmanager
+
+def welcome():
+    msg = '''
+    
+  ██████  █    ██  ██▓███  ▓█████  ██▀███   ███▄ ▄███▓ ▒█████  ▓█████▄ ▓█████  ██▓    
+▒██    ▒  ██  ▓██▒▓██░  ██▒▓█   ▀ ▓██ ▒ ██▒▓██▒▀█▀ ██▒▒██▒  ██▒▒██▀ ██▌▓█   ▀ ▓██▒    
+░ ▓██▄   ▓██  ▒██░▓██░ ██▓▒▒███   ▓██ ░▄█ ▒▓██    ▓██░▒██░  ██▒░██   █▌▒███   ▒██░    
+  ▒   ██▒▓▓█  ░██░▒██▄█▓▒ ▒▒▓█  ▄ ▒██▀▀█▄  ▒██    ▒██ ▒██   ██░░▓█▄   ▌▒▓█  ▄ ▒██░    
+▒██████▒▒▒▒█████▓ ▒██▒ ░  ░░▒████▒░██▓ ▒██▒▒██▒   ░██▒░ ████▓▒░░▒████▓ ░▒████▒░██████▒
+▒ ▒▓▒ ▒ ░░▒▓▒ ▒ ▒ ▒▓▒░ ░  ░░░ ▒░ ░░ ▒▓ ░▒▓░░ ▒░   ░  ░░ ▒░▒░▒░  ▒▒▓  ▒ ░░ ▒░ ░░ ▒░▓  ░
+░ ░▒  ░ ░░░▒░ ░ ░ ░▒ ░      ░ ░  ░  ░▒ ░ ▒░░  ░      ░  ░ ▒ ▒░  ░ ▒  ▒  ░ ░  ░░ ░ ▒  ░
+░  ░  ░   ░░░ ░ ░ ░░          ░     ░░   ░ ░      ░   ░ ░ ░ ▒   ░ ░  ░    ░     ░ ░   
+      ░     ░                 ░  ░   ░            ░       ░ ░     ░       ░  ░    ░  ░
+                                                                ░                     
+
+    developed by Marissa Fichera 2022
+    contact: ...     
+    
+    '''
+    print(msg)
 
 
-@contextlib
+
+@contextmanager
 def displayblock(txt, pad='~'):
     try:
         tag = f'{txt} started'
@@ -27,8 +48,8 @@ def displayblock(txt, pad='~'):
         paddedmessage(tag, pad)
 
 
-def paddedmessage(tag, pad):
-    print('~' * 80)
+def paddedmessage(tag, pad='~'):
+    print(pad * 80)
     if '|' in tag:
         tag = tag.split('|')
     if not isinstance(tag, (tuple, list)):
@@ -37,7 +58,7 @@ def paddedmessage(tag, pad):
     for ti in tag:
         ti = f' {ti} '
         print(f'{ti:{pad}^80}')
-    print('~' * 80)
+    print(pad * 80)
 
 
 def warning(msg):

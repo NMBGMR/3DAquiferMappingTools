@@ -46,6 +46,7 @@ def init_arcpy(cfg):
     arcpy.CheckOutExtension('Spatial')
     env.workspace = cfg['working_folder']
 
+
 #
 # def get_working_folder(cfg):
 #     # working_folder = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\working_folder_example'
@@ -77,12 +78,21 @@ def init_arcpy(cfg):
 #     working_geodb = get_working_geodb_path(cfg)
 #     env.workspace = working_geodb
 
+def get_extent(cfg):
+    if cfg.get('extent'):
+        cfg = cfg['extent']
+        # ext = Extent(485690, 3530089, 693190, 3627589)
+        ext = Extent(cfg['xmin'], cfg['ymin'], cfg['xmax'], cfg['ymax'])
+    else:
+        arcpy.env.extent = cfg['snapRaster']# r'E:\BASEMAP\dbasin_spadtm_resamp_ft.tif'
+        ext = '#'
+    return ext
+
 
 def topo_to_raster(cfg, fc, i, elev_ID, unit):
     print(fc, i, elev_ID, unit)
     # set_working_geodb_workspace(cfg)
     env.workspace = cfg['working_geodb']
-
 
     # Set local variables
     inPointElevations = TopoPointElevation([[fc, '{}'.format(elev_ID)]])
@@ -103,7 +113,11 @@ def topo_to_raster(cfg, fc, i, elev_ID, unit):
 
     # Execute TopoToRaster
     # arcpy.env.extent = r'E:\BASEMAP\dbasin_spadtm_resamp_ft.tif'
-    outTTR = TopoToRaster(inFeatures, "1000", Extent(485690, 3530089, 693190, 3627589), "20", "#", "#", "ENFORCE",
+
+    ext = get_extent(cfg)
+
+    outTTR = TopoToRaster(inFeatures, "1000", ext,
+                          "20", "#", "#", "ENFORCE",
                           "SPOT",
                           "20", "#", "1", "0", "0", "200", '#', '#',
                           f'ERROR_FILE{unit}.txt',
@@ -208,7 +222,7 @@ def copy_final(cfg, raster, unit):
 def ebm_modelbound(cfg, rasters, n, unitnames):
     print('BEGIN masking rasters to model boundary')
     # USER INPUT - STUDY BOUNDARY RASTER
-    #mask = r'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
+    # mask = r'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
     mask = cfg['model_extent_polygon']
     print('Model boundary raster or polygon used for clipping = {}'.format(mask))
     inRasters = rasters
@@ -343,12 +357,12 @@ def resample(surfaces, units, size='1000', kind='NEAREST'):
 
 
 def place_final002_surfaces(cfg, rasters):
-    # f = get_working_geodb_and_folders_ex(cfg)
-    f = cfg['working_geodb_and_folders']
-    outfolder002 = os.path.join(f, 'b002')
-    outgdb002 = os.path.join(f, 'b002.gdb')
-    # outfolder002 = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\b002'
-    # outgdb002 = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\b002.gdb'
+    outfolder002 = cfg['final_out_f']
+
+    final_out_g = os.path.join(outfolder002, 'b002.gdb')
+    if not os.path.exists(final_out_g):
+        arcpy.management.CreateFileGDB(outfolder002, 'b002.gdb')
+    outgdb002 = final_out_g
 
     for raster in rasters:
         print('raster = ', raster)
@@ -393,11 +407,11 @@ def make_network_gdb_name(cfg, name, create=True):
     return name
 
 
-def export_fc_to_csv(fc, elevID, unit):
+def export_fc_to_csv(cfg, fc, elevID, unit):
     print(f'EXPORTING attribute table to csv for {fc}')
     fields = ['OBJECTID', 'Field1', 'OriginalID', 'Easting', 'Northing', f'{elevID}',
               'DataSource', 'ei4']
-    out_path = r'C:\Users\mfichera\PycharmProjects\3D_mapping\db_methods\qcexports'
+    out_path = cfg['working_folder']
     out_csv = f'{unit}_modelbuild_inputdata.csv'
     arcpy.ExportXYv_stats('{}'.format(fc), fields, 'COMMA', os.path.join(out_path, out_csv), 'ADD_FIELD_NAMES')
     print(f'EXPORTED attribute table to csv for {unit}')
@@ -409,45 +423,60 @@ def export_fc_to_csv(fc, elevID, unit):
 
 def uncert_topo_to_raster(cfg, name, n):
     # need to make n number of surfaces, where n = number of random sample text files generated in sample_percent
+
+    env.workspace = cfg['working_folder']
     print('current workspace =', env.workspace)
-    #env.workspace = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\working_geodb_and_folders_ex\working_folder_example'
-    # output_directory = get_working_folder(cfg)
-    output_directory = cfg['working_folder']
+
+    arcpy.CheckOutExtension("Spatial")
 
     for i in range(1, n + 1):
         print(f'Running topo to raster on {name}, {i}')
-        fc = f'{name}_fc00{i}.shp'
+        # fc = f'{name}_fc00{i}.shp'
+        fc = make_feature_class_name(name, i)
         inPointElevations = TopoPointElevation([[fc, 'ei4']])
-        print('inpointelevations', inPointElevations)
         inCliffs = TopoCliff(['cbp_f.shp', 'gm_f.shp'])
         inFeatures = ([inPointElevations, inCliffs])
-        print('infeatyre', inFeatures)
-        outTTR = TopoToRaster(inFeatures, "1000", Extent(485690, 3530089, 693190, 3627589), "20", "#", "#", "ENFORCE",
-                              "SPOT", "20", "#", "1", "0", "0", "200", '#', '#', '#', '#', '#', '#', '#')
 
-        path = os.path.join(output_directory, f'{name}_t2r{i}.tif')
-        outTTR.save(path)
+        ext = get_extent(cfg)
 
+        outTTR = TopoToRaster(inFeatures, "1000",
+                              #Extent(485690, 3530089, 693190, 3627589),
+                              ext,
+                              "20", "#", "#", "ENFORCE",
+                              "SPOT",
+                              "20", "#", "1", "0", "0", "200")
+
+        pname = f'{name}_t2r{i}.tif'
+        path = os.path.join(env.workspace, pname)
+        print('out t2r path/name == ', path)
+        outTTR.save(pname)
         print('t2r', f'{name}, {i}')
     print('t2r done')
 
 
+def make_feature_class_name(name, i):
+    return f'{name}_fc{i:03n}.shp'
+
+
+def make_rand_csv_name(name, i):
+    return f'{name}_rand{i:03n}.csv'
+
+
 def create_feature_class(cfg, name, n):
     working_folder = cfg['working_folder']
-    # working_folder = get_working_folder(cfg)
     print('fc current workspace == ', env.workspace)
     print('working folder', working_folder)
     for i in range(1, n + 1):
         print(f'Creating feature class out of rand sample files: {name}, {i}')
-        table = f'{name}_rand00{i}.csv'
+        table = make_rand_csv_name(name, i)
         X = 'Easting'
         Y = 'Northing'
         Z = 'ei4'
-        out_layername = f'{name}_lyr00{i}'
+        out_layername = f'{name}_lyr{i:03n}'
         out_layer = os.path.join(working_folder, out_layername)
         arcpy.MakeXYEventLayer_management(table, X, Y, out_layer, env.outputCoordinateSystem, Z)
 
-        fc_name = f'{name}_fc00{i}'
+        fc_name = make_feature_class_name(name, i)
         arcpy.FeatureClassToFeatureClass_conversion(out_layer, working_folder, fc_name)
         print('fc', f'{name} {i}', 'created')
     print('{} all feature classes created'.format(name))
@@ -465,12 +494,20 @@ def sample_percent(cfg, df, unitname, n):
     for i in range(1, n + 1):
         print(f'RANDOM SAMPLE {i}: taking random sample of {unitname} dataset')
         rand_samp = df.sample(frac=.75)
-        p = f'{unitname}_rand00{i}.csv'
+        # p = f'{unitname}_rand00{i}.csv'
+        p = make_rand_csv_name(unitname, i)
         rand_samp.to_csv(os.path.join(out_path, p))
         print(f'random sample file taken {i}, {unitname}')
     print('random sample files created')
 
     return out_path
+
+
+# def find_qc_csvs():
+#     qc_out_path = r'C:\Users\mfichera\PycharmProjects\3D_mapping\db_methods\qcexports'
+#     qc_location = cfg['qc_location']
+#     qc_name = cfg['qc_result_name']
+#     qc_out_csv = f'{unit}_modelbuild_inputdata.csv'
 
 
 def generate_uncertainty_maps(cfg, unitnames, n, masks):

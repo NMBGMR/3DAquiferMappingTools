@@ -23,6 +23,7 @@ from arcpy import env
 from arcpy.sa import *
 import os
 import pandas as pd
+import sys
 
 from config import load_configuration, report_configuration, validate_configuration, setup_configuration
 from log import paddedmessage, displayblock,welcome
@@ -70,12 +71,19 @@ def main():
                     qc_out_r = copy_final(cfg, b001002r, unit)
                     qc_output_rasters.append(qc_out_r)
                     qc_output_fcs.append(fc)
-                    qc_csv = export_fc_to_csv(fc, elev_ID, unit)
+                    qc_csv = export_fc_to_csv(cfg, fc, elev_ID, unit)
                     qc_output_csvs.append(qc_csv)
                     print('{} QC process finished'.format(unit))
                 else:
                     calc_sigma(fc, i, elev_ID)
                     query_by_sigma(cfg, fc, i, unit)
+    else:
+        print('Skipping QC process')
+        print('*********Make sure .csv files containing output QC data are in working folder*********')
+        for unit in unitnames:
+            out_csv = f'{unit}_modelbuild_inputdata.csv'
+            qc_csv = os.path.join(cfg['working_folder'], out_csv)
+            qc_output_csvs.append(qc_csv)
 
         print('DONE WITH QC FOR ALL UNITS')
 
@@ -130,7 +138,11 @@ def main():
 
     with displayblock('generate uncertainty datasets'):
         n = 10
+        if not qc_output_csvs:
+            sys.exit('ERROR: QC CSV files are not in working folder')
         for c, unit in zip(qc_output_csvs, unitnames[1:]):
+            print('output_csv = ', c)
+            print('unitname = ', unit)
             qcdata = pd.read_csv(c)
             df = pd.DataFrame(qcdata)
 

@@ -4,6 +4,7 @@ overwriteOutput: True
 #output_directory: 'W:\statewide\aqua_map3D\am_references\MarsMapMethods\tutorial\example_network_output'
 #overwriteOutput: True
 basin: 'DelawareBasin'
+workspace_major: working_geodb_and_folders_ex
 working_geodb_name: working_geodb_example.gdb
 working_folder: working_folder_example
 do_qc: False
@@ -14,10 +15,8 @@ unitnames:
 elevIDs:
   - alv_b_elev
   - ud_b_elev
-
-#
-#
-##step1:
-##  arcpy_workspace: E:\DelawareBasin\DelawareBasin_geodata\workingdata\dbasin_geodata_originals5_deccheck.gdb
-##  arcpy_snapRaster: E:\DelawareBasin\DelawareBasin_geodata\workingdata\BASEMAP.gdb\z_snapraster
-##  out_geodb: E:\DelawareBasin\DelawareBasin_geodata\workingdata\QCoutputs_v12.gdb
+extent:
+  xmin: 485690
+  ymin: 3530089
+  xmax: 693190
+  ymax: 3627589

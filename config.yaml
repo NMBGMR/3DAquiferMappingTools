@@ -4,11 +4,17 @@ overwriteOutput: True
 #output_directory: 'W:\statewide\aqua_map3D\am_references\MarsMapMethods\tutorial\example_network_output'
 #overwriteOutput: True
 basin: 'DelawareBasin'
-workspace_major: working_geodb_and_folders_ex
-working_geodb_name: working_geodb_example.gdb
-working_folder: working_folder_example
-do_qc: False
+snapraster: 'z_snapraster'
+#workspace_major: random_file_folder
+#base_folder: base
+#base_gdb: base.gdb
+#working_folder: working_folder_example
+#working_gdb: working_geodb_example.gdb
+do_qc: True
 model_extent_polygon: 'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
+fault_list:
+  - cbp_f
+  - gm_f
 unitnames:
   - alvb
   - udb

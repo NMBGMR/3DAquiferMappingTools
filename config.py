@@ -15,6 +15,7 @@
 # ===============================================================================
 import os
 import pprint
+import arcpy
 
 import yaml
 
@@ -35,7 +36,7 @@ def load_configuration():
 def validate_configuration(cfg):
     for check in (
              #'input_directory',
-             'working_geodb_name',
+             # 'working_geodb_name',
               #    'output_directory',
                   'basin',):
         if check in cfg:
@@ -48,49 +49,68 @@ def validate_configuration(cfg):
 
 def setup_configuration(cfg):
     basin = cfg['basin']
-    workingdata = os.path.join('E:\\', basin, f"{basin}_geodata", 'workingdata')
-    if not os.path.exists(workingdata):
-        os.makedirs(workingdata)
-    cfg['workingdata'] = workingdata
 
-    working_geodb_and_folders = os.path.join(workingdata, cfg['workspace_major'])
-    if not os.path.exists(working_geodb_and_folders):
-        os.makedirs(working_geodb_and_folders)
-    cfg['working_geodb_and_folders'] = working_geodb_and_folders
+    # create major workspace
+    root_path = os.path.join('C:\\', 'geomod3d', basin, f"{basin}_geodata")
+    if not os.path.exists(root_path):
+        os.makedirs(root_path)
+    cfg['basin_workspace'] = root_path
 
-    working_folder = os.path.join(working_geodb_and_folders, cfg['working_folder'])
+    # create base data folder with basin name
+    basedata = os.path.join(cfg['basin_workspace'], 'a_basedata')
+    if not os.path.exists(basedata):
+        os.makedirs(basedata)
+    cfg['base_folder'] = basedata
+
+    # create base data geodatabase
+    basedata_gdb = os.path.join(cfg['base_folder'], 'base.gdb')
+    if not os.path.exists(basedata_gdb):
+        arcpy.CreateFileGDB_management(basedata, 'base.gdb')
+    cfg['base_gdb'] = basedata_gdb
+
+    # create working data folder
+    working_folder = os.path.join(root_path, 'b_working')
     if not os.path.exists(working_folder):
         os.makedirs(working_folder)
     cfg['working_folder'] = working_folder
 
-    working_geodb = os.path.join(working_folder, cfg['working_geodb_name'])
-    if not os.path.exists(working_geodb):
-        os.makedirs(working_geodb)
-    cfg['working_geodb'] = working_geodb
+    # create working gdb
+    working_gdb = os.path.join(working_folder, 'working_geodb.gdb')
+    if not os.path.exists(working_gdb):
+        arcpy.CreateFileGDB_management(working_folder, 'working_geodb.gdb')
+    cfg['working_geodb'] = working_gdb
 
-    qc_out = os.path.join(working_geodb_and_folders, 'b001')
+    # create folder for stepwise output folders
+    result_folder = os.path.join(root_path, 'c_results')
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder)
+    cfg['result_folder'] = result_folder
+
+    # create stepwise output folders
+    qc_out = os.path.join(result_folder, 'b001_qcresults')
     if not os.path.exists(qc_out):
         os.makedirs(qc_out)
     cfg['b001'] = qc_out
 
-    mc_surfs = os.path.join(working_geodb_and_folders, 'b003')
+    modelras_out_f = os.path.join(result_folder, 'b002_modelsurfs')
+    if not os.path.exists(modelras_out_f):
+        os.makedirs(modelras_out_f)
+    cfg['modelras_out_f'] = modelras_out_f
+
+    modelras_out_g = os.path.join(modelras_out_f, 'b002.gdb')
+    if not os.path.exists(modelras_out_g):
+        arcpy.CreateFileGDB_management(modelras_out_f, 'b002.gdb')
+    cfg['modelras_out_g'] = modelras_out_g
+
+    mc_surfs = os.path.join(result_folder, 'b003_mc')
     if not os.path.exists(mc_surfs):
         os.makedirs(mc_surfs)
     cfg['b003'] = mc_surfs
 
-    uncert_out = os.path.join(working_geodb_and_folders, 'b004')
+    uncert_out = os.path.join(result_folder, 'b004_uncert')
     if not os.path.exists(uncert_out):
         os.makedirs(uncert_out)
     cfg['b004'] = uncert_out
-
-    f = cfg['working_geodb_and_folders']
-    final_out_f = os.path.join(f, 'b002')
-
-    if not os.path.exists(final_out_f):
-        os.makedirs(final_out_f)
-    cfg['final_out_f'] = final_out_f
-
-
 
 
 def report_configuration(cfg):

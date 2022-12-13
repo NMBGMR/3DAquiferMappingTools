@@ -30,7 +30,7 @@ from log import paddedmessage, displayblock,welcome
 from model import copy_master_to_working, topo_to_raster, extract_vals_to_pts, copy_final, export_fc_to_csv, calc_sigma, \
     query_by_sigma, resample, mosaic_min, minus, reclassify, extract_by_mask, ebm_modelbound, place_final002_surfaces, \
     sample_percent, create_feature_class, uncert_topo_to_raster, generate_uncertainty_maps, copy_to_network_folder, \
-    init_arcpy
+    init_arcpy, copy_basedata
 
 
 def main():
@@ -44,11 +44,19 @@ def main():
     setup_configuration(cfg)
     report_configuration(cfg)
 
+
     init_arcpy(cfg)
+
+
 
     basinname = cfg['basin']
     unitnames = cfg['unitnames']
+    faults = cfg['fault_list']
     elevIDs = cfg['elevIDs']
+
+    copy_basedata(cfg)
+
+
 
     qc_output_rasters = []
     qc_output_fcs = []
@@ -65,7 +73,7 @@ def main():
             ntemp_fcs = len(temp_fcs)
             for i, fc in enumerate(temp_fcs):
                 print(f'iteration {i}, {fc}')
-                b001002r = topo_to_raster(cfg, fc, i, elev_ID, unit)
+                b001002r = topo_to_raster(cfg, fc, i, elev_ID, unit, faults)
                 extract_vals_to_pts(cfg, fc, b001002r, i, unit)
                 if i == (ntemp_fcs-1):
                     qc_out_r = copy_final(cfg, b001002r, unit)

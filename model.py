@@ -39,7 +39,7 @@ v = '001'
 def init_arcpy(cfg):
     # arcpy.env.snapRaster = r'E:\DelawareBasin\DelawareBasin_geodata\workingdata\BASEMAP.gdb\z_snapraster'
 
-    path = os.path.join(cfg['workingdata'], 'BASEMAP.gdb', 'z_snapraster')
+    path = os.path.join(cfg['base_gdb'], 'z_snapraster')
     arcpy.env.snapRaster = path
     arcpy.env.overwriteOutput = cfg.get('overwriteOutput', True)
     env.outputCoordinateSystem = arcpy.SpatialReference("NAD 1983 UTM Zone 13N")
@@ -89,7 +89,7 @@ def get_extent(cfg):
     return ext
 
 
-def topo_to_raster(cfg, fc, i, elev_ID, unit):
+def topo_to_raster(cfg, fc, i, elev_ID, unit, fault_list):
     print(fc, i, elev_ID, unit)
     # set_working_geodb_workspace(cfg)
     env.workspace = cfg['working_geodb']
@@ -102,7 +102,8 @@ def topo_to_raster(cfg, fc, i, elev_ID, unit):
     # inLake = TopoLake(['lakes.shp'])
     # inSinks = TopoSink([['sink1.shp', 'elevation'], ['sink2.shp', 'none']])
     # inStream = TopoStream(['streams.shp'])
-    inCliff = TopoCliff(['cbp_f', 'gm_f'])
+    # inCliff = TopoCliff(['cbp_f', 'gm_f'])
+    inCliff = TopoCliff(fault_list)
     # inCoast = TopoCoast(['coast.shp'])
     # inExclusion = TopoExclusion(['ignore.shp'])
 
@@ -193,6 +194,26 @@ def query_by_sigma(cfg, fc, i, unit):
     arcpy.CopyFeatures_management(in_features, out_feature_class)
 
     print(i, 'query done and shapefile output')
+
+def copy_basedata(cfg):
+    #copy folders and gdbs from a_basedata to b_working
+    env.workspace = cfg['base_folder']
+    in_shps = arcpy.ListFiles('*.shp')
+    print('shapefiles: ', in_shps)
+    for shp in in_shps:
+        arcpy.management.Copy(shp, os.path.join(cfg['working_folder'], '{}'.format(shp)))
+        arcpy.FeatureClassToFeatureClass_conversion(shp, cfg['working_geodb'], shp.replace('.shp', ''))
+
+    in_rasters = arcpy.ListFiles('*.tif')
+    print('rasters =', in_rasters)
+    for raster in in_rasters:
+        arcpy.management.Copy(raster, os.path.join(cfg['working_folder'], '{}'.format(raster)))
+
+    env.workspace = cfg['base_gdb']
+    in_fcs = arcpy.ListFeatureClasses()
+    print('geodb data = ', in_fcs)
+    for fc in in_fcs:
+        arcpy.management.Copy(fc, os.path.join(cfg['working_geodb'], '{}'.format(fc)))
 
 
 def copy_master_to_working(cfg, unit):
@@ -357,22 +378,15 @@ def resample(surfaces, units, size='1000', kind='NEAREST'):
 
 
 def place_final002_surfaces(cfg, rasters):
-    outfolder002 = cfg['final_out_f']
-
-    final_out_g = os.path.join(outfolder002, 'b002.gdb')
-    if not os.path.exists(final_out_g):
-        arcpy.management.CreateFileGDB(outfolder002, 'b002.gdb')
-    outgdb002 = final_out_g
-
     for raster in rasters:
         print('raster = ', raster)
         # name = r'{}\{}'.format(outfolder002, raster)
-        name = os.path.join(outfolder002, raster)
+        name = os.path.join(cfg['modelras_out_f'], raster)
         print('output TIFF file = ', name)
         arcpy.CopyRaster_management(raster, name, '', '', '-3.402823e38', 'NONE', 'NONE',
                                     '32_BIT_FLOAT', '', '', 'TIFF', '')
 
-        gdbname = os.path.join(outgdb002, raster.replace('.tif', ''))
+        gdbname = os.path.join(cfg['modelras_out_g'], raster.replace('.tif', ''))
         print('output GRID file = ', gdbname)
         arcpy.CopyRaster_management(raster, gdbname, '', '', '-3.402823e38', 'NONE', 'NONE',
                                     '32_BIT_FLOAT', '', '', 'GRID', '')

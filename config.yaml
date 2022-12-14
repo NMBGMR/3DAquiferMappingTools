@@ -5,13 +5,8 @@ overwriteOutput: True
 #overwriteOutput: True
 basin: 'DelawareBasin'
 snapraster: 'z_snapraster'
-#workspace_major: random_file_folder
-#base_folder: base
-#base_gdb: base.gdb
-#working_folder: working_folder_example
-#working_gdb: working_geodb_example.gdb
 do_qc: True
-model_extent_polygon: 'E:\3D_spatial_general\3d mapping areas\Delaware_Basin.shp'
+model_extent_polygon: 'Delaware_Basin.shp'
 fault_list:
   - cbp_f
   - gm_f

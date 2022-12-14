@@ -200,18 +200,24 @@ def copy_basedata(cfg):
     env.workspace = cfg['base_folder']
     in_shps = arcpy.ListFiles('*.shp')
     print('shapefiles: ', in_shps)
+    if not in_shps:
+        print('no shapefiles in basedata folder - please place appropriate faults in basedata folder')
     for shp in in_shps:
         arcpy.management.Copy(shp, os.path.join(cfg['working_folder'], '{}'.format(shp)))
         arcpy.FeatureClassToFeatureClass_conversion(shp, cfg['working_geodb'], shp.replace('.shp', ''))
 
     in_rasters = arcpy.ListFiles('*.tif')
     print('rasters =', in_rasters)
+    if not in_rasters:
+        print('no DEM in basedata folder - please place appropriate DEM in basedata folder')
     for raster in in_rasters:
         arcpy.management.Copy(raster, os.path.join(cfg['working_folder'], '{}'.format(raster)))
 
     env.workspace = cfg['base_gdb']
     in_fcs = arcpy.ListFeatureClasses()
     print('geodb data = ', in_fcs)
+    if not in_fcs:
+        print('no data in basedata geodatabase - please place appropriate feature classes in basedata gdb')
     for fc in in_fcs:
         arcpy.management.Copy(fc, os.path.join(cfg['working_geodb'], '{}'.format(fc)))
 
